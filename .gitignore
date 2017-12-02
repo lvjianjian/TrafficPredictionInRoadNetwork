@@ -1,0 +1,12 @@
+data/
+.idea/
+*.iml
+test*
+.*
+!.gitignore
+*.out
+*.pyc
+record*
+out/
+visualization/
+model/
