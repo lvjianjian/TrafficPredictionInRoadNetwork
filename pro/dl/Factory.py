@@ -139,57 +139,27 @@ class Factory(object):
         A = arm_shape[1]
         input_x = Input((road_num, conf.observe_length, 1))
         input_ram = Input(arm_shape)
-
         output = Lookup(conf.batch_size)([input_x, input_ram])
-        # glorot_normal he_uniform
-        output = Conv3D(32, (1, A, 2), activation="sigmoid", kernel_initializer="glorot_uniform")(output)
+        output = Conv3D(32, (1, A, 2), activation="relu")(output)
         output = LookUpSqueeze()(output)
-
         output = Lookup(conf.batch_size)([output, input_ram])
-        output = Conv3D(32, (1, A, 2), activation="sigmoid", kernel_initializer="glorot_uniform")(output)
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
         output = LookUpSqueeze()(output)
-        #
-        # output = Lookup(batch_size)([output, input_ram])
-        # output = Conv3D(32, (1, A, 5), activation="sigmoid", kernel_initializer="glorot_uniform")(output)
-        # output = LookUpSqueeze()(output)
-
-
         output = MyReshape(conf.batch_size)(output)
-        output = GRU(32, activation="sigmoid")(output)
+        output = SimpleRNN(5)(output)
         output = Dense(1)(output)
         output = MyInverseReshape(conf.batch_size)(output)
-
-        # output = Lookup(batch_size)([output, input_ram])
-        # output = Conv3D(32, (1, A, 3), activation="sigmoid", kernel_initializer="glorot_uniform")(output)
-        # output = LookUpSqueeze()(output)
-        #
-        # output = Lookup(batch_size)([output, input_ram])
-        # output = Conv3D(16, (1, A, 3), activation="sigmoid", kernel_initializer="glorot_uniform")(output)
-        # output = LookUpSqueeze()(output)
-        #
-        #
-        # output = Lookup(batch_size)([output, input_ram])
-        # output = Conv3D(1, (1, A, 4), activation="sigmoid", kernel_initializer="glorot_uniform")(output)
-        # output = LookUpSqueeze()(output)
-
-        # output = Lookup(batch_size)([output, input_ram])
-        # output = Conv3D(1, (1, A, 3), activation="tanh")(output)
-        # output = Squeeze()(output)
-
-        # output = Flatten()(output)
-        # output = Dense(road_num * conf.predict_length, activation="sigmoid")(output)
-        # output = Reshape((road_num, conf.predict_length))(output)
         model = Model(inputs=[input_x, input_ram], outputs=output)
         return model
 
-    def LCNN_model_test(conf, arm_shape):
+    def LCNN2_model(self, conf, arm_shape):
         road_num = arm_shape[0]
         A = arm_shape[1]
         input_x = Input((road_num, conf.observe_length, 1))
         input_ram = Input(arm_shape)
-        input_effective = Input((arm_shape[0],))
+        # input_effective = Input((arm_shape[0],))
         output = Lookup(conf.batch_size)([input_x, input_ram])
-        output = Conv3D(32, (1, A, 2), activation="relu")(output)
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
         # output = Conv3D(32, (1, 2, 2), activation="relu", padding="same")(output)
         # output = MaxPooling3D((1, A, 2))(output)
         output = LookUpSqueeze()(output)
@@ -197,7 +167,7 @@ class Factory(object):
 
 
         output = Lookup(conf.batch_size)([output, input_ram])
-        output = Conv3D(16, (1, A, 2), activation="relu")(output)
+        output = Conv3D(8, (1, A, 2), activation="relu")(output)
         # # output = Conv3D(16, (1, 2, 2), activation="relu", padding="same")(output)
         # # output = MaxPooling3D((1, A, 2))(output)
         output = LookUpSqueeze()(output)
@@ -205,7 +175,7 @@ class Factory(object):
 
         output = Conv2D(1, (1, 8), activation="sigmoid")(output)
         output = Reshape((road_num, conf.predict_length))(output)
-        model = Model(inputs=[input_x, input_ram, input_effective], outputs=output)
+        model = Model(inputs=[input_x, input_ram], outputs=output)
         return model
 
 

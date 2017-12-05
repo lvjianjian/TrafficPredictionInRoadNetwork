@@ -345,6 +345,7 @@ def split_one_link_avg_speed_by_road(l, regex, edgeid2id_dict, all_road_num):
     items = l.strip().split("|")
     one_time = items[0]
     datas = np.zeros((all_road_num,))
+    traj_nums = np.zeros((all_road_num,))
     for _i in range(1, len(items)):
         _v = items[_i]
         g = regex.match(_v.strip())
@@ -354,7 +355,8 @@ def split_one_link_avg_speed_by_road(l, regex, edgeid2id_dict, all_road_num):
         if edgeid in edgeid2id_dict:
             key = edgeid2id_dict[edgeid]
             datas[key] = avg_speed
-    return one_time, datas
+            traj_nums[key] = traj_num
+    return one_time, datas, traj_nums
 
 
 @performance
@@ -370,17 +372,18 @@ def load_raw_link_speed_by_road(path, suffix, cache=True):
 
     # edgeid,speed,num 正则
 
-
     time_cache_path = os.path.join(path, CACHE, "time_by_road_{}.pkl".format(suffix))
     data_cache_path = os.path.join(path, CACHE, "data_by_road_{}.pkl".format(suffix))
+    traj_num_cache_path = os.path.join(path, CACHE, "traj_num_by_road_{}.pkl".format(suffix))
     time_list = []
     data_list = []
-
+    traj_num_list = []
     if cache and os.path.exists(time_cache_path):
         print time_cache_path, "exist"
         print "loading cache..."
         time_list = cPickle.load(open(time_cache_path, "r"))
         data_list = cPickle.load(open(data_cache_path, "r"))
+        traj_num_list = cPickle.load(open(traj_num_cache_path, "r"))
         print "load cache finish"
 
     else:
@@ -389,17 +392,19 @@ def load_raw_link_speed_by_road(path, suffix, cache=True):
             for _index, l in enumerate(f):
                 if _index % 500 == 0:
                     print _index
-                one_time, datas = split_one_link_avg_speed_by_road(l, REGEX, edgeid2id, all_road_num)
+                one_time, datas, traj_nums = split_one_link_avg_speed_by_road(l, REGEX, edgeid2id, all_road_num)
                 time_list.append(one_time)
                 data_list.append(datas)
+                traj_num_list.append(traj_nums)
         print "load from raw finish"
 
         if cache:
             print "cache..."
             cPickle.dump(time_list, open(time_cache_path, "w"))
             cPickle.dump(data_list, open(data_cache_path, "w"))
+            cPickle.dump(traj_num_list, open(traj_num_cache_path, "w"))
             print "cache finish"
-    return time_list, data_list
+    return time_list, data_list, traj_num_list
 
 
 @performance
@@ -415,32 +420,36 @@ def load_raw_link_speed_by_road_in_time(path, suffix, cache=True,
     print "load_raw_link_speed_by_road_in_time ing.."
     time_cache_path = os.path.join(path, CACHE, "time_by_road_{}_{}_{}.pkl".format(suffix, start_hour, end_hour))
     data_cache_path = os.path.join(path, CACHE, "data_by_road_{}_{}_{}.pkl".format(suffix, start_hour, end_hour))
-
+    trajnum_cache_path = os.path.join(path, CACHE, "traj_num_by_road_{}_{}_{}.pkl".format(suffix, start_hour, end_hour))
     nt = []
     nd = []
-
+    nn = []
     if cache and os.path.exists(time_cache_path):
         print "cache exist"
         print "load cache..."
         nt = cPickle.load(open(time_cache_path, "r"))
         nd = cPickle.load(open(data_cache_path, "r"))
+        nn = cPickle.load(open(trajnum_cache_path, "r"))
         print "load cache finish"
     else:
         print "cache not exist"
-        t, datas = load_raw_link_speed_by_road(path, suffix, cache)
-        for _t, _d in zip(t, datas):
+        t, datas, traj_nums = load_raw_link_speed_by_road(path, suffix, cache)
+        for _t, _d, _n in zip(t, datas, traj_nums):
             if in_time(_t, start_hour, end_hour):
                 nt.append(_t)
                 nd.append(_d)
-        l = sorted(zip(nt, nd), key=lambda x: x[0])
+                nn.append(_n)
+        l = sorted(zip(nt, nd, nn), key=lambda x: x[0])
 
         nt = []
         nd = []
+        nn = []
         current_day = ""
         _nt = []
         _nd = []
-        l += [("", "")]  # 可以让最后一天在循环中判断
-        for _t, _m in l:
+        _nn = []
+        l += [("", "", "")]  # 可以让最后一天在循环中判断
+        for _t, _m, _n in l:
             _cd = get_time_day(_t)
             if _cd != current_day:
                 # 判断之前数据的是否较为完整
@@ -448,27 +457,32 @@ def load_raw_link_speed_by_road_in_time(path, suffix, cache=True,
                     if len(_nt) > size * complete_ratio:
                         nt += _nt
                         nd += _nd
+                        nn += _nn
                         # print "stay {}, {}/{}".format(current_day,len(_nt),size)
                     else:
                         print "remove {}, just {}/{}".format(current_day, len(_nt), size)
                 else:  # 不用去除
                     nt += _nt
                     nd += _nd
+                    nn += _nn
                 _nt = [_t]
                 _nd = [_m]
+                _nn = [_n]
                 current_day = _cd
             else:
                 _nd.append(_m)
                 _nt.append(_t)
+                _nn.append(_n)
 
         print "preprocess finish"
 
         if cache:
             cPickle.dump(nt, open(time_cache_path, "w"))
             cPickle.dump(nd, open(data_cache_path, "w"))
+            cPickle.dump(nn, open(trajnum_cache_path, "w"))
             print "cache finish"
 
-    return nt, nd
+    return nt, nd, nn
 
 
 def fill_by_time(_d):
@@ -549,19 +563,29 @@ def get_adjacent_edge_ids(rg, _choose_edge_id, start=True, end=True):
 def completion_data(path, suffix, cache=True,
                     start_hour=8, end_hour=22,
                     time_fill_split=0.5, road_fill_split=0.2,
-                    stride_sparse=False, stride_edges=1):
+                    stride_sparse=False, stride_edges=1,
+                    A=-1):
+    if A != -1:
+        fix_A = True
+    else:
+        fix_A = False
+        A = 0
+
     stm_path = os.path.join(path,
                             CACHE,
-                            "stm_{}_{}_{}_{}_{}{}".format(suffix, start_hour, end_hour,
-                                                          time_fill_split, road_fill_split,
-                                                          "_" + str(stride_edges) if stride_sparse else ""))
+                            "stm_{}_{}_{}_{}_{}{}{}".format(suffix, start_hour, end_hour,
+                                                            time_fill_split, road_fill_split,
+                                                            "_" + str(stride_edges) if stride_sparse else "",
+                                                            "_" + str(A) if fix_A else ""))
     arm_path = os.path.join(path,
                             CACHE,
-                            "arm_{}_{}_{}_{}_{}{}".format(suffix, start_hour, end_hour,
-                                                          time_fill_split, road_fill_split,
-                                                          "_" + str(stride_edges) if stride_sparse else ""))
+                            "arm_{}_{}_{}_{}_{}{}{}".format(suffix, start_hour, end_hour,
+                                                            time_fill_split, road_fill_split,
+                                                            "_" + str(stride_edges) if stride_sparse else "",
+                                                            "_" + str(A) if fix_A else ""))
 
     time_cache_path = os.path.join(path, CACHE, "time_by_road_{}_{}_{}.pkl".format(suffix, start_hour, end_hour))
+    time_window = int(suffix.split("_")[-1])
 
     if cache and os.path.exists(stm_path + ".npy"):
         print stm_path, " exist"
@@ -573,10 +597,14 @@ def completion_data(path, suffix, cache=True,
         print "cache not exist"
         print "complete start"
         # 数据补全
-        t, d = load_raw_link_speed_by_road_in_time(path, suffix, start_hour=start_hour, end_hour=end_hour)
+        t, d, num = load_raw_link_speed_by_road_in_time(path, suffix, start_hour=start_hour, end_hour=end_hour)
         d = np.vstack(d).T
         d = d.astype(float)
+        num = np.vstack(num).T.astype(int)
+        num_int = (num >= time_window).astype(int)
         time_num = d.shape[1]
+
+        d = d * num_int
 
         rg = load_part_RG(path, suffix[:suffix.rindex("_")])
         id2edgeid = get_id2edgeid(rg)
@@ -592,6 +620,7 @@ def completion_data(path, suffix, cache=True,
                 choose.append(_i)
                 _d = d[_i]
                 fill_by_time(_d)
+
         # new dr
         dr = []
         for _d in d:
@@ -620,9 +649,9 @@ def completion_data(path, suffix, cache=True,
         choose = sorted(list(set(choose)))
         choose_edge_ids = [id2edgeid[_c] for _c in choose]
         edgeid2newid = dict(zip(choose_edge_ids, range(len(choose))))
+        newid2edgeid = dict(zip(range(len(choose)), choose_edge_ids))
         choose_edge_ids_set = set(choose_edge_ids)
         choose_edge_ids_adjacent_ids = []
-        A = 0
         if not stride_sparse:  # 不跨边
             for _choose_edge_id in choose_edge_ids:
                 adjacent_edge_ids = get_adjacent_edge_ids(rg, _choose_edge_id)
@@ -642,7 +671,7 @@ def completion_data(path, suffix, cache=True,
                 _found_edge_ids = set()
                 _found_edge_ids.add(_choose_edge_id)
 
-                #找邻接边
+                # 找邻接边
                 def find_adjacent_edge_ids_by_stride(_choose_edge_id,
                                                      temp,
                                                      _found_edge_ids,
@@ -653,8 +682,11 @@ def completion_data(path, suffix, cache=True,
                         return
 
                     if start:
-                        start_adjacent_edge_ids = get_adjacent_edge_ids(rg, _choose_edge_id, start=True, end=False)
-                        for _choose_adjacent_edgeid in start_adjacent_edge_ids :
+                        start_adjacent_edge_ids = get_adjacent_edge_ids(rg,
+                                                                        _choose_edge_id,
+                                                                        start=True,
+                                                                        end=False)
+                        for _choose_adjacent_edgeid in start_adjacent_edge_ids:
                             # 在候选边中
                             if _choose_adjacent_edgeid not in _found_edge_ids:
                                 _found_edge_ids.add(_choose_adjacent_edgeid)
@@ -671,7 +703,7 @@ def completion_data(path, suffix, cache=True,
 
                     if end:
                         end_adjacent_edge_ids = get_adjacent_edge_ids(rg, _choose_edge_id, start=False, end=True)
-                        for _choose_adjacent_edgeid in end_adjacent_edge_ids :
+                        for _choose_adjacent_edgeid in end_adjacent_edge_ids:
                             # 在候选边中
                             if _choose_adjacent_edgeid not in _found_edge_ids:
                                 _found_edge_ids.add(_choose_adjacent_edgeid)
@@ -686,12 +718,22 @@ def completion_data(path, suffix, cache=True,
                                                                      start=False,
                                                                      end=True)
 
-
                 find_adjacent_edge_ids_by_stride(_choose_edge_id, temp, _found_edge_ids)
 
+                current_times = 0
+                while fix_A and len(temp) < A and current_times < 3:
+                    for _idd in list(temp):
+                        find_adjacent_edge_ids_by_stride(newid2edgeid[_idd], temp, _found_edge_ids)
+                    current_times += 1
+
                 temp = sorted(list(temp))
-                if len(temp) > A:
-                    A = len(temp)
+
+                if not fix_A:
+                    if len(temp) > A:
+                        A = len(temp)
+                else:
+                    temp = temp[:A]
+
                 choose_edge_ids_adjacent_ids.append(sorted(temp))
 
         stm = d[choose]  # spatial-temporal matrix
@@ -708,10 +750,3 @@ def completion_data(path, suffix, cache=True,
             np.save(arm_path, arm)
             print "cache finish"
     return stm, arm, t
-
-    if __name__ == '__main__':
-        # print load_part_RG("data/", "0123class_45huan")
-        # print load_part_RG_node("data/", "0123class_45huan")
-        # time_list, data = load_raw_link_speed_by_road("data/", "0123class_sub_region1_5")
-        # t, d = load_raw_link_speed_by_road_in_time("data/", "0123class_sub_region1_5")
-        stm, arm, t = completion_data("data/", "0123class_sub_region1_5")

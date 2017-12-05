@@ -10,3 +10,4 @@ record*
 out/
 visualization/
 model/
+script/*.yaml

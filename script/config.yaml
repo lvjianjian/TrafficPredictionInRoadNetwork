@@ -12,12 +12,12 @@ observe_length: 10
 predict_length: 1
 test_ratio: 0.2
 
-model_name: LCNN
+model_name: LCRNN
 model_path: /home/lvzhongjian/speed_prediction_in_road_network/model
 use_cache_model: False
 
 epochs: 500
 batch_size: 48
-early_stopping: 1
+early_stopping: 3
 learning_rate: 0.0002
 

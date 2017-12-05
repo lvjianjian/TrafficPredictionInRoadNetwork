@@ -35,12 +35,13 @@ def get_model_save_path(conf):
     model_path = os.path.join(conf.model_path, str(conf.time_window))
     if not os.path.exists(model_path):
         os.makedirs(model_path)
-    model_save_path = os.path.join(model_path, "{}_{}_{}_{}_{}_{}.best.h5".format(conf.suffix,
-                                                                                  conf.time_window,
-                                                                                  conf.time_fill_split,
-                                                                                  conf.road_fill_split,
-                                                                                  conf.stride_edges,
-                                                                                  conf.model_name))
+    model_save_path = os.path.join(model_path, "{}_{}_{}_{}_{}_{}_{}.best.h5".format(conf.config_name,
+                                                                                     conf.suffix,
+                                                                                     conf.time_window,
+                                                                                     conf.time_fill_split,
+                                                                                     conf.road_fill_split,
+                                                                                     conf.stride_edges,
+                                                                                     conf.model_name))
     return model_save_path
 
 

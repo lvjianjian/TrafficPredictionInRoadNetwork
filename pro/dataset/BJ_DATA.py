@@ -58,14 +58,16 @@ class BJ_DATA(object):
                  start_hour=8, end_hour=22,
                  time_fill_split=0.5, road_fill_split=0.2,
                  no_adjacent_fill_zero=True,
-                 stride_sparse=False, stride_edges=1):
+                 stride_sparse=False, stride_edges=1,
+                 fix_adjacent_road_num=-1):
         stm, arm, t = completion_data(path, suffix,
                                       start_hour=start_hour,
                                       end_hour=end_hour,
                                       time_fill_split=time_fill_split,
                                       road_fill_split=road_fill_split,
                                       stride_sparse=stride_sparse,
-                                      stride_edges=stride_edges)
+                                      stride_edges=stride_edges,
+                                      A = fix_adjacent_road_num)
         stm = stm[:] * 3.6
         stm = self.min_max_scala.fit_transform(stm)
         xs = []

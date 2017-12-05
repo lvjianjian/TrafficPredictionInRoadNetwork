@@ -28,7 +28,8 @@ def get_train_test_data(conf, need_road_network_structure_matrix, no_adjacent_fi
     xs, ys, arm = data.get_data(conf.data_path, conf.suffix + "_" + str(conf.time_window),
                                 no_adjacent_fill_zero=no_adjacent_fill_zero,
                                 time_fill_split=conf.time_fill_split, road_fill_split=conf.road_fill_split,
-                                stride_sparse=conf.stride_sparse, stride_edges=conf.stride_edges)
+                                stride_sparse=conf.stride_sparse, stride_edges=conf.stride_edges,
+                                fix_adjacent_road_num=conf.fix_adjacent_road_num)
 
     arm_shape = arm.shape
     xs = xs.reshape(xs.shape[0], xs.shape[1], xs.shape[2], 1)

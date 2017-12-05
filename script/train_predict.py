@@ -19,14 +19,19 @@ import os
 from pro.dataset import get_train_test_data
 from pro.dl.Factory import factory
 from keras.callbacks import TensorBoard
-
-
-# np.random.seed(2017)
+import argparse
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, help="the config path")
+    args = parser.parse_args()
+
+    print args.config
+
     # 配置文件
-    conf = Config("script/config.yaml")
+    conf = Config(args.config)
+
     # 数据读取
     data, arm_shape, train_xs, train_ys, train_arms, test_xs, test_ys, test_arms = \
         get_train_test_data(conf,

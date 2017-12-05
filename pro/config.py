@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#encoding=utf-8
+# encoding=utf-8
 
 """
 @Author: zhongjianlv
@@ -12,10 +12,12 @@
 """
 
 import yaml
+import os
+
 
 class Config(object):
-
     def __init__(self, config_path):
+        self.config_name = os.path.basename(config_path).split(".")[0]
         f = open(config_path, "r")
         conf = yaml.load(f)
         self.data_path = conf["data_path"]
@@ -37,5 +39,9 @@ class Config(object):
         if not self.stride_sparse:
             self.stride_edges = 0
         self.model_name = conf["model_name"]
-        self.use_loopup = conf["use_loopup"]
+        if "L" in self.model_name:
+            self.use_loopup = True
+        else:
+            self.use_loopup = False
         self.no_adjacent_fill_zero = conf["no_adjacent_fill_zero"]
+        self.fix_adjacent_road_num = conf["fix_adjacent_road_num"]
