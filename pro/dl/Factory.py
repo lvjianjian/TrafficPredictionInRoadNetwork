@@ -14,6 +14,8 @@
 from keras.layers import Input, Dense, Activation, Embedding, Flatten, Reshape, Layer, Dropout
 from keras.layers.recurrent import SimpleRNN, GRU, LSTM
 from keras.layers.convolutional import Conv2D, MaxPooling2D, Conv3D, MaxPooling3D
+from keras.layers.merge import Add
+from keras.layers.local import LocallyConnected2D
 from keras.models import Model
 from pro.dl import rmse, mape, mae, MyReshape, MyInverseReshape, get_model_save_path, Lookup, LookUpSqueeze
 
@@ -37,6 +39,20 @@ class Factory(object):
         output = MyReshape(conf.batch_size)(input_x)
         # output = SimpleRNN(32, return_sequences=True)(output)
         output = SimpleRNN(conf.observe_length)(output)
+        # output = Dropout(0.1)(output)
+        output = Dense(conf.predict_length)(output)
+        output = MyInverseReshape(conf.batch_size)(output)
+        model = Model(inputs=input_x, outputs=output)
+        return model
+
+    def BiRNN_model(self, conf, arm_shape):
+        road_num = arm_shape[0]
+        input_x = Input((road_num, conf.observe_length, 1))
+        output = MyReshape(conf.batch_size)(input_x)
+        # output = SimpleRNN(32, return_sequences=True)(output)
+        output1 = SimpleRNN(conf.observe_length)(output)
+        output2 = SimpleRNN(conf.observe_length, go_backwards=True)(output)
+        output = Add()([output1, output2])
         # output = Dropout(0.1)(output)
         output = Dense(conf.predict_length)(output)
         output = MyInverseReshape(conf.batch_size)(output)
@@ -108,31 +124,28 @@ class Factory(object):
         model = Model(inputs=input_x, outputs=output)
         return model
 
-    def LCNN_model(self, conf, arm_shape):
-        road_num = arm_shape[0]
-        A = arm_shape[1]
-        input_x = Input((road_num, conf.observe_length, 1))
-        input_ram = Input(arm_shape)
-
-        output = Lookup(conf.batch_size)([input_x, input_ram])
-        output = Conv3D(32, (1, 2, 2), activation="relu", padding="same")(output)
-        output = Conv3D(32, (1, 2, 2), activation="relu", padding="same")(output)
-        output = MaxPooling3D((1, A, 2))(output)
-        output = LookUpSqueeze()(output)
-
-
-        output = Lookup(conf.batch_size)([output, input_ram])
-        output = Conv3D(16, (1, 2, 2), activation="relu", padding="same")(output)
-        output = Conv3D(16, (1, 2, 2), activation="relu", padding="same")(output)
-        output = MaxPooling3D((1, A, 2))(output)
-        output = LookUpSqueeze()(output)
-
-        output = Conv2D(1, (1, 2), activation="sigmoid")(output)
-        output = Reshape((road_num, conf.predict_length))(output)
-        model = Model(inputs=[input_x, input_ram], outputs=output)
-        return model
-
-
+    # def LCNN_model(self, conf, arm_shape):
+    #     road_num = arm_shape[0]
+    #     A = arm_shape[1]
+    #     input_x = Input((road_num, conf.observe_length, 1))
+    #     input_ram = Input(arm_shape)
+    #
+    #     output = Lookup(conf.batch_size)([input_x, input_ram])
+    #     output = Conv3D(32, (1, 2, 2), activation="relu", padding="same")(output)
+    #     output = Conv3D(32, (1, 2, 2), activation="relu", padding="same")(output)
+    #     output = MaxPooling3D((1, A, 2))(output)
+    #     output = LookUpSqueeze()(output)
+    #
+    #     output = Lookup(conf.batch_size)([output, input_ram])
+    #     output = Conv3D(16, (1, 2, 2), activation="relu", padding="same")(output)
+    #     output = Conv3D(16, (1, 2, 2), activation="relu", padding="same")(output)
+    #     output = MaxPooling3D((1, A, 2))(output)
+    #     output = LookUpSqueeze()(output)
+    #
+    #     output = Conv2D(1, (1, 2), activation="sigmoid")(output)
+    #     output = Reshape((road_num, conf.predict_length))(output)
+    #     model = Model(inputs=[input_x, input_ram], outputs=output)
+    #     return model
 
     def LCRNN_model(self, conf, arm_shape):
         road_num = arm_shape[0]
@@ -152,7 +165,7 @@ class Factory(object):
         model = Model(inputs=[input_x, input_ram], outputs=output)
         return model
 
-    def LCNN2_model(self, conf, arm_shape):
+    def LCNN_model(self, conf, arm_shape):
         road_num = arm_shape[0]
         A = arm_shape[1]
         input_x = Input((road_num, conf.observe_length, 1))
@@ -160,20 +173,20 @@ class Factory(object):
         # input_effective = Input((arm_shape[0],))
         output = Lookup(conf.batch_size)([input_x, input_ram])
         output = Conv3D(16, (1, A, 2), activation="relu")(output)
-        # output = Conv3D(32, (1, 2, 2), activation="relu", padding="same")(output)
-        # output = MaxPooling3D((1, A, 2))(output)
         output = LookUpSqueeze()(output)
         # output = Effective()([output, input_effective])
 
 
         output = Lookup(conf.batch_size)([output, input_ram])
-        output = Conv3D(8, (1, A, 2), activation="relu")(output)
-        # # output = Conv3D(16, (1, 2, 2), activation="relu", padding="same")(output)
-        # # output = MaxPooling3D((1, A, 2))(output)
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
         output = LookUpSqueeze()(output)
         # output = Effective()([output, input_effective])
 
-        output = Conv2D(1, (1, 8), activation="sigmoid")(output)
+        output = Lookup(conf.batch_size)([output, input_ram])
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
+        output = LookUpSqueeze()(output)
+
+        output = Conv2D(1, (1, 7), activation="sigmoid")(output)
         output = Reshape((road_num, conf.predict_length))(output)
         model = Model(inputs=[input_x, input_ram], outputs=output)
         return model

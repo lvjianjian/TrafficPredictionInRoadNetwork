@@ -67,7 +67,7 @@ class BJ_DATA(object):
                                       road_fill_split=road_fill_split,
                                       stride_sparse=stride_sparse,
                                       stride_edges=stride_edges,
-                                      A = fix_adjacent_road_num)
+                                      A=fix_adjacent_road_num)
         stm = stm[:] * 3.6
         stm = self.min_max_scala.fit_transform(stm)
         xs = []
@@ -84,7 +84,6 @@ class BJ_DATA(object):
             for _i in range(arm.shape[0]):
                 _a = arm[_i]
                 _a[_a[:] == arm.shape[0]] = _i
-
         return xs, ys, arm
 
     def split(self, test_ratio, datas):

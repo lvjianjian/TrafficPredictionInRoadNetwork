@@ -18,7 +18,6 @@ from pro.dl import rmse, mape, mae, get_model_save_path
 import os
 from pro.dataset import get_train_test_data
 from pro.dl.Factory import factory
-from keras.callbacks import TensorBoard
 import argparse
 
 
@@ -73,7 +72,7 @@ def main():
                             batch_size=conf.batch_size,
                             callbacks=[early_stopping, check_points],
                             validation_data=[test_xs, test_ys])
-        print history
+
         model.load_weights(model_save_path)
 
     # 测试

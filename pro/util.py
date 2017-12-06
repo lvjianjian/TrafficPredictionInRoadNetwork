@@ -666,8 +666,8 @@ def completion_data(path, suffix, cache=True,
                 choose_edge_ids_adjacent_ids.append(sorted(temp))
         else:  # 跨边连接信息
             for _choose_edge_id in choose_edge_ids:
-                temp = set()
-                temp.add(edgeid2newid[_choose_edge_id])
+                temp = []
+                temp.append(edgeid2newid[_choose_edge_id])
                 _found_edge_ids = set()
                 _found_edge_ids.add(_choose_edge_id)
 
@@ -691,7 +691,8 @@ def completion_data(path, suffix, cache=True,
                             if _choose_adjacent_edgeid not in _found_edge_ids:
                                 _found_edge_ids.add(_choose_adjacent_edgeid)
                                 if _choose_adjacent_edgeid in choose_edge_ids_set:
-                                    temp.add(edgeid2newid[_choose_adjacent_edgeid])
+                                    if edgeid2newid[_choose_adjacent_edgeid] not in temp:
+                                        temp.append(edgeid2newid[_choose_adjacent_edgeid])
                                 # 不在候选边中,找它的邻接边信息
                                 else:
                                     find_adjacent_edge_ids_by_stride(_choose_adjacent_edgeid,
@@ -708,7 +709,8 @@ def completion_data(path, suffix, cache=True,
                             if _choose_adjacent_edgeid not in _found_edge_ids:
                                 _found_edge_ids.add(_choose_adjacent_edgeid)
                                 if _choose_adjacent_edgeid in choose_edge_ids_set:
-                                    temp.add(edgeid2newid[_choose_adjacent_edgeid])
+                                    if edgeid2newid[_choose_adjacent_edgeid] not in temp:
+                                        temp.append(edgeid2newid[_choose_adjacent_edgeid])
                                 # 不在候选边中,找它的邻接边信息
                                 else:
                                     find_adjacent_edge_ids_by_stride(_choose_adjacent_edgeid,
@@ -726,7 +728,7 @@ def completion_data(path, suffix, cache=True,
                         find_adjacent_edge_ids_by_stride(newid2edgeid[_idd], temp, _found_edge_ids)
                     current_times += 1
 
-                temp = sorted(list(temp))
+                # temp = sorted(list(temp))
 
                 if not fix_A:
                     if len(temp) > A:
@@ -734,7 +736,7 @@ def completion_data(path, suffix, cache=True,
                 else:
                     temp = temp[:A]
 
-                choose_edge_ids_adjacent_ids.append(sorted(temp))
+                choose_edge_ids_adjacent_ids.append(temp)
 
         stm = d[choose]  # spatial-temporal matrix
         arm = np.zeros((len(choose), A))  # adjacent road matrix
