@@ -45,3 +45,5 @@ class Config(object):
             self.use_loopup = False
         self.no_adjacent_fill_zero = conf["no_adjacent_fill_zero"]
         self.fix_adjacent_road_num = conf["fix_adjacent_road_num"]
+        self.start_hour = conf["start_hour"]
+        self.end_hour = conf["end_hour"]

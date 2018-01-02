@@ -176,7 +176,6 @@ class Factory(object):
         output = LookUpSqueeze()(output)
         # output = Effective()([output, input_effective])
 
-
         output = Lookup(conf.batch_size)([output, input_ram])
         output = Conv3D(16, (1, A, 2), activation="relu")(output)
         output = LookUpSqueeze()(output)

@@ -100,9 +100,9 @@ def main():
     extract_subgraph(rg,
                      rg_node,
                      ["0x00", "0x01", "0x02", "0x03"],
-                     sub_region1,
+                     region1,
                      "data",
-                     "0123class_sub_region1")
+                     "0123class_region1")
 
 
 if __name__ == '__main__':

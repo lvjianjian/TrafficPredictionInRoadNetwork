@@ -26,6 +26,8 @@ def get_multiple_equal_batch_size(datas, batch_size):
 def get_train_test_data(conf, need_road_network_structure_matrix, no_adjacent_fill_zero):
     data = BJ_DATA(conf.observe_length, conf.predict_length)
     xs, ys, arm = data.get_data(conf.data_path, conf.suffix + "_" + str(conf.time_window),
+                                start_hour=conf.start_hour,
+                                end_hour=conf.end_hour,
                                 no_adjacent_fill_zero=no_adjacent_fill_zero,
                                 time_fill_split=conf.time_fill_split, road_fill_split=conf.road_fill_split,
                                 stride_sparse=conf.stride_sparse, stride_edges=conf.stride_edges,

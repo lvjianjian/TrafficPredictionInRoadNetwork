@@ -15,22 +15,30 @@ from pro.util import *
 
 
 class MinMaxScalar(object):
-    def __init__(self):
+    def __init__(self, _min=-1, _max=1):
+        assert (self._max > self._min)
+        self._min = _min
+        self._max = _max
         self.min = 0
         self.max = 0
+        self.s = 0
+        self.x = 0
         self.is_fit = False
 
     def fit(self, x):
-        self.min = np.min(x)
-        self.max = np.max(x)
-        self.is_fit = True
+        if self.is_fit is False:
+            self.min = np.min(x)
+            self.max = np.max(x)
+            self.z = (self.max - self.min) / float((self._max - self._min))
+            self.x = (self.min + self.max - self.z * (self._min + self._max)) / 2
+            self.is_fit = True
 
     def transform(self, x):
         if not self.is_fit:
             print "please fit first"
             exit(1)
         _x = x.copy()
-        _x = (_x - self.min).astype(float) / (self.max - self.min)
+        _x = (_x - self.x).astype(float) / self.z
         return _x
 
     def fit_transform(self, x):
@@ -42,7 +50,7 @@ class MinMaxScalar(object):
             print "please fit first"
             exit(1)
         _x = x.copy()
-        _x = _x.astype(float) * (self.max - self.min) + self.min
+        _x = _x.astype(float) * self.z + self.x
         return _x
 
 
@@ -68,6 +76,10 @@ class BJ_DATA(object):
                                       stride_sparse=stride_sparse,
                                       stride_edges=stride_edges,
                                       A=fix_adjacent_road_num)
+        self.stm = stm
+        self.arm = arm
+        self.t = t
+
         stm = stm[:] * 3.6
         stm = self.min_max_scala.fit_transform(stm)
         xs = []
