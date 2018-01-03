@@ -77,13 +77,13 @@ def find_connected_graph(part_rg,
     return part_rg, part_nodes
 
 
-def extract_subgraph(rg_all, rg_node_all, classes, region, save_path, suffix="part"):
+def extract_subgraph(rg_all, rg_node_all, classes, region, save_path, suffix="part", start_find_index = 0):
     part_rg, part_nodes = obtain_part_graph(rg_all,
                                             rg_node_all,
                                             classes,
                                             region)  # ,"0x04","0x06","0x08","0x09","0x0a","0x0b"
 
-    part_rg, part_nodes = find_connected_graph(part_rg, part_nodes, 0)
+    part_rg, part_nodes = find_connected_graph(part_rg, part_nodes, start_find_index)
     print "after find connected graph"
     print "edges shape", part_rg.shape[0]
     print "nodes shape", part_nodes.shape[0]
@@ -102,7 +102,8 @@ def main():
                      ["0x00", "0x01", "0x02", "0x03"],
                      region1,
                      "data",
-                     "0123class_region1")
+                     "0123class_region1",
+                     2)
 
 
 if __name__ == '__main__':

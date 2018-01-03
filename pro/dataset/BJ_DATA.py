@@ -16,9 +16,9 @@ from pro.util import *
 
 class MinMaxScalar(object):
     def __init__(self, _min=-1, _max=1):
-        assert (self._max > self._min)
         self._min = _min
         self._max = _max
+        assert (self._max > self._min)
         self.min = 0
         self.max = 0
         self.s = 0
@@ -76,6 +76,7 @@ class BJ_DATA(object):
                                       stride_sparse=stride_sparse,
                                       stride_edges=stride_edges,
                                       A=fix_adjacent_road_num)
+
         self.stm = stm
         self.arm = arm
         self.t = t
@@ -84,11 +85,28 @@ class BJ_DATA(object):
         stm = self.min_max_scala.fit_transform(stm)
         xs = []
         ys = []
-
+        _i = 0
+        _start = 0
+        current = ""
         length = self.observe_length + self.predict_length
-        for _i in range(stm.shape[1] - length + 1):
-            xs.append(stm[:, _i:_i + self.observe_length])
-            ys.append(stm[:, _i + self.observe_length:_i + self.observe_length + self.predict_length])
+
+        while _i < stm.shape[1]:
+            if t[_i][:8] == current:
+                _i += 1
+            else:
+                if _i != _start:
+                    smooth_part = stm[:, _start: _i - 1].copy()
+                    for _j in range(1, smooth_part.shape[1] - 1):
+                        smooth_part[:, _j] = stm[:, _start: _i - 1][:, _j - 1] * 0.15 + stm[:, _start: _i - 1][:, _j] * 0.7 + stm[:, _start: _i - 1][:, _j + 1] * 0.15
+                    smooth_part[:,0] = stm[:, _start: _i - 1][:, 1] * 0.2 + stm[:, _start: _i - 1][:, 0] * 0.8
+                    smooth_part[:,smooth_part.shape[1] - 1] = stm[:, _start: _i - 1][:, smooth_part.shape[1] - 2] * 0.2 + stm[:, _start: _i - 1][:, smooth_part.shape[1] - 1] * 0.8
+                    for _k in range(0, smooth_part.shape[1] - length + 2):
+                        xs.append(stm[:, _k:_k + self.observe_length])
+                        ys.append(stm[:, _k + self.observe_length:_k + self.observe_length + self.predict_length])
+                _start = _i
+                current = t[_i][:8]
+                _i += 1
+
         xs = np.stack(xs, axis=0)
         ys = np.stack(ys, axis=0)
 

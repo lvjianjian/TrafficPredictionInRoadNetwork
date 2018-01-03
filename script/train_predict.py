@@ -37,6 +37,9 @@ def main():
                             need_road_network_structure_matrix=conf.use_loopup,
                             no_adjacent_fill_zero=conf.no_adjacent_fill_zero)
 
+    print train_xs.shape
+    print test_xs.shape
+
     if conf.use_loopup:
         train_xs = [train_xs, train_arms]
         test_xs = [test_xs, test_arms]
