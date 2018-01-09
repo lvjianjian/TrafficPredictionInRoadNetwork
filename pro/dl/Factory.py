@@ -11,7 +11,7 @@
 @Update Date: 17-11-30, 15:22
 """
 
-from keras.layers import Input, Dense, Activation, Embedding, Flatten, Reshape, Layer, Dropout
+from keras.layers import Input, Dense, Activation, Embedding, Flatten, Reshape, Layer, Dropout, BatchNormalization
 from keras.layers.recurrent import SimpleRNN, GRU, LSTM
 from keras.layers.convolutional import Conv2D, MaxPooling2D, Conv3D, MaxPooling3D
 from keras.layers.merge import Add
@@ -172,6 +172,69 @@ class Factory(object):
         model = Model(inputs=[input_x, input_ram], outputs=output)
         return model
 
+    def LCRNNBN_model(self, conf, arm_shape):
+        road_num = arm_shape[0]
+        A = arm_shape[1]
+        input_x = Input((road_num, conf.observe_length, 1))
+        input_ram = Input(arm_shape)
+        output = Lookup(conf.batch_size)([input_x, input_ram])
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
+        output = BatchNormalization()(output)
+        output = LookUpSqueeze()(output)
+
+        output = Lookup(conf.batch_size)([output, input_ram])
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
+        output = BatchNormalization()(output)
+        output = LookUpSqueeze()(output)
+
+        output = Lookup(conf.batch_size)([output, input_ram])
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
+        output = BatchNormalization()(output)
+        output = LookUpSqueeze()(output)
+
+        output = MyReshape(conf.batch_size)(output)
+        output = SimpleRNN(5)(output)
+        output = Dense(1, activation="tanh")(output)
+        output = MyInverseReshape(conf.batch_size)(output)
+        model = Model(inputs=[input_x, input_ram], outputs=output)
+        return model
+
+    def E_model(self, conf, arm_shape):
+        road_num = arm_shape[0]
+        if conf.observe_p != 0:
+            input_x1 = Input((road_num, conf.observe_p))
+        if conf.observe_t != 0:
+            input_x2 = Input((road_num, conf.observe_t))
+
+
+
+    def LCRNNBN_model(self, conf, arm_shape):
+        road_num = arm_shape[0]
+        A = arm_shape[1]
+        input_x = Input((road_num, conf.observe_length, 1))
+        input_ram = Input(arm_shape)
+        output = Lookup(conf.batch_size)([input_x, input_ram])
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
+        output = BatchNormalization()(output)
+        output = LookUpSqueeze()(output)
+
+        output = Lookup(conf.batch_size)([output, input_ram])
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
+        output = BatchNormalization()(output)
+        output = LookUpSqueeze()(output)
+
+        output = Lookup(conf.batch_size)([output, input_ram])
+        output = Conv3D(16, (1, A, 2), activation="relu")(output)
+        output = BatchNormalization()(output)
+        output = LookUpSqueeze()(output)
+
+        output = MyReshape(conf.batch_size)(output)
+        output = SimpleRNN(5)(output)
+        output = Dense(1, activation="tanh")(output)
+        output = MyInverseReshape(conf.batch_size)(output)
+        model = Model(inputs=[input_x, input_ram], outputs=output)
+        return model
+
     def LCNN_model(self, conf, arm_shape):
         road_num = arm_shape[0]
         A = arm_shape[1]
@@ -182,7 +245,6 @@ class Factory(object):
         output = Conv3D(16, (1, A, 2), activation="relu")(output)
         output = LookUpSqueeze()(output)
         # output = Effective()([output, input_effective])
-
         output = Lookup(conf.batch_size)([output, input_ram])
         output = Conv3D(16, (1, A, 2), activation="relu")(output)
         output = LookUpSqueeze()(output)
@@ -192,7 +254,7 @@ class Factory(object):
         output = Conv3D(16, (1, A, 2), activation="relu")(output)
         output = LookUpSqueeze()(output)
 
-        output = Conv2D(1, (1, 7), activation="tanh")(output)
+        output = Conv2D(1, (1, 5), activation="tanh")(output)
         output = Reshape((road_num, conf.predict_length))(output)
         model = Model(inputs=[input_x, input_ram], outputs=output)
         return model

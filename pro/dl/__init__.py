@@ -52,10 +52,10 @@ class MyReshape(Layer):
 
     def call(self, inputs, **kwargs):
         input_shape = inputs.get_shape().as_list()
-        return tf.reshape(inputs, (self.batch_size * input_shape[1], input_shape[2], input_shape[3]))
+        return tf.reshape(inputs, (self.batch_size * input_shape[1],) + input_shape[2:])
 
     def compute_output_shape(self, input_shape):
-        return (self.batch_size * input_shape[1], input_shape[2], input_shape[3])
+        return (self.batch_size * input_shape[1],) + input_shape[2:]
 
 
 class MyInverseReshape(Layer):

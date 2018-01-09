@@ -55,11 +55,14 @@ class MinMaxScalar(object):
 
 
 class BJ_DATA(object):
-    def __init__(self, observe_length, predict_length):
+    def __init__(self, observe_length, predict_length, conf):
         self.data_name = "BJ"
         self.observe_length = observe_length
         self.predict_length = predict_length
         self.min_max_scala = MinMaxScalar()
+        self.conf = conf
+        self.observe_p = self.conf.observe_p
+        self.observe_t = self.conf.observe_t
 
     @performance
     def get_data(self, path, suffix,
@@ -80,7 +83,6 @@ class BJ_DATA(object):
         self.stm = stm
         self.arm = arm
         self.t = t
-
         stm = stm[:] * 3.6
         stm = self.min_max_scala.fit_transform(stm)
         xs = []
@@ -89,7 +91,6 @@ class BJ_DATA(object):
         _start = 0
         current = ""
         length = self.observe_length + self.predict_length
-
         while _i < stm.shape[1]:
             if t[_i][:8] == current:
                 _i += 1
@@ -97,24 +98,103 @@ class BJ_DATA(object):
                 if _i != _start:
                     smooth_part = stm[:, _start: _i - 1].copy()
                     for _j in range(1, smooth_part.shape[1] - 1):
-                        smooth_part[:, _j] = stm[:, _start: _i - 1][:, _j - 1] * 0.15 + stm[:, _start: _i - 1][:, _j] * 0.7 + stm[:, _start: _i - 1][:, _j + 1] * 0.15
-                    smooth_part[:,0] = stm[:, _start: _i - 1][:, 1] * 0.2 + stm[:, _start: _i - 1][:, 0] * 0.8
-                    smooth_part[:,smooth_part.shape[1] - 1] = stm[:, _start: _i - 1][:, smooth_part.shape[1] - 2] * 0.2 + stm[:, _start: _i - 1][:, smooth_part.shape[1] - 1] * 0.8
-                    for _k in range(0, smooth_part.shape[1] - length + 2):
-                        xs.append(stm[:, _k:_k + self.observe_length])
-                        ys.append(stm[:, _k + self.observe_length:_k + self.observe_length + self.predict_length])
+                        smooth_part[:, _j] = stm[:, _start: _i - 1][:, _j - 1] * 0.15 + stm[:, _start: _i - 1][:,
+                                                                                        _j] * 0.7 + stm[:,
+                                                                                                    _start: _i - 1][:,
+                                                                                                    _j + 1] * 0.15
+                    smooth_part[:, 0] = stm[:, _start: _i - 1][:, 1] * 0.2 + stm[:, _start: _i - 1][:, 0] * 0.8
+                    smooth_part[:, smooth_part.shape[1] - 1] = stm[:, _start: _i - 1][:,
+                                                               smooth_part.shape[1] - 2] * 0.2 + stm[:, _start: _i - 1][
+                                                                                                 :, smooth_part.shape[
+                                                                                                        1] - 1] * 0.8
+                    stm[:, _start: _i - 1] = smooth_part
+                    # for _k in range(0, smooth_part.shape[1] - length + 2):
+                    #     xs.append(stm[:, _k:_k + self.observe_length])
+                    #     ys.append(stm[:, _k + self.observe_length:_k + self.observe_length + self.predict_length])
                 _start = _i
                 current = t[_i][:8]
                 _i += 1
 
-        xs = np.stack(xs, axis=0)
-        ys = np.stack(ys, axis=0)
+        tt = []
+        for _t in self.t:
+            tt.append(pd.to_datetime(_t))
 
+        time_dict = dict(zip(tt, range(len(tt))))
+        T = 24 * 60 / self.conf.time_window
+        offset_frame = pd.DateOffset(minutes=self.conf.time_window)
+
+        XC = []
+        XP = []
+        XT = []
+        YS = []
+        for _t in tt:
+            indexs = []
+            not_it = False
+            for _i in range(self.observe_length, 0, -1):
+                _tt = _t - _i * offset_frame
+                if (_tt in time_dict):
+                    indexs.append(time_dict[_tt])
+                else:
+                    not_it = True
+            if not_it:
+                continue
+            xc = stm[:, indexs]
+            # print indexs
+            indexs = []
+            for _i in range(self.observe_p, 0, -1):
+                _tt = _t - _i * T * offset_frame
+                if (_tt in time_dict):
+                    indexs.append(time_dict[_tt])
+                else:
+                    not_it = True
+            if not_it:
+                continue
+            xp = stm[:, indexs]
+            # print indexs
+            indexs = []
+            for _i in range(self.observe_t, 0, -1):
+                _tt = _t - _i * T * 7 * offset_frame
+                if (_tt in time_dict):
+                    indexs.append(time_dict[_tt])
+                else:
+                    not_it = True
+            if not_it:
+                continue
+            # print indexs
+            xt = stm[:, indexs]
+
+            indexs = []
+            for _i in range(self.predict_length):
+                _tt = _t + _i * offset_frame
+                if (_tt in time_dict):
+                    indexs.append(time_dict[_tt])
+                else:
+                    not_it = True
+            if not_it:
+                continue
+            y = stm[:, indexs]
+            # print indexs
+
+
+            XC.append(xc)
+            XP.append(xp)
+            XT.append(xt)
+            YS.append(y)
+
+        XC = np.stack(XC, axis=0)
+        XP = np.stack(XP, axis=0)
+        XT = np.stack(XT, axis=0)
+        YS = np.stack(YS, axis=0)
+
+        # print XC.shape
+        # print XP.shape
+        # print XT.shape
+        # print YS.shape
         if not no_adjacent_fill_zero:
             for _i in range(arm.shape[0]):
                 _a = arm[_i]
                 _a[_a[:] == arm.shape[0]] = _i
-        return xs, ys, arm
+        return [XC, XP, XT], YS, arm
 
     def split(self, test_ratio, datas):
         n = datas[0].shape[0]
