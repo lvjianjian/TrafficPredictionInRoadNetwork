@@ -15,7 +15,6 @@ import urllib
 import urllib2
 import re
 from bs4 import BeautifulSoup
-import Paramater
 import h5py
 
 def getPage(month):
@@ -91,7 +90,7 @@ def windToInt(wind):
 def create_weather_h5():
     import pandas as pd
     import numpy as np
-    dataPath = "/home/zhongjianlv/gpumount/TrafficPrediction/JamPredict/data/" #Paramater.DATAPATH
+    dataPath = "/home/zhongjianlv/gpumount/speed_prediction_in_road_network/data/" #Paramater.DATAPATH
     csv = pd.read_csv(dataPath + "BJ_WEATHER.csv", names=["date", "maxT", "minT", "weather", "windspeed"])
     arr = np.array(csv)
     date = []
@@ -118,7 +117,7 @@ def create_weather_h5():
     f.close()
 
 def main():
-    with open(Paramater.DATAPATH + "BJ_WEATHER.csv", "w") as f:
+    with open("/home/zhongjianlv/gpumount/speed_prediction_in_road_network/" + "BJ_WEATHER.csv", "w") as f:
         for i in range(1, 13):
             month = "2016" + "%02d" % i
             l = parse(getPage(month))

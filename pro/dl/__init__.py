@@ -52,10 +52,10 @@ class MyReshape(Layer):
 
     def call(self, inputs, **kwargs):
         input_shape = inputs.get_shape().as_list()
-        return tf.reshape(inputs, (self.batch_size * input_shape[1],) + input_shape[2:])
+        return tf.reshape(inputs, (self.batch_size * input_shape[1],) + tuple(input_shape[2:]))
 
     def compute_output_shape(self, input_shape):
-        return (self.batch_size * input_shape[1],) + input_shape[2:]
+        return (self.batch_size * input_shape[1],) + tuple(input_shape[2:])
 
 
 class MyInverseReshape(Layer):
@@ -70,6 +70,22 @@ class MyInverseReshape(Layer):
     def compute_output_shape(self, input_shape):
         return (self.batch_size, input_shape[0] / self.batch_size, input_shape[1])
 
+
+class matrixLayer(Layer):
+    def __init__(self, **kwargs):
+        # self.output_dim = output_dim
+        super(matrixLayer, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        initial_weight_value = np.random.random(input_shape[1:])
+        self.W = K.variable(initial_weight_value)
+        self.trainable_weights = [self.W]
+
+    def call(self, x, mask=None):
+        return x * self.W
+
+    def get_output_shape_for(self, input_shape):
+        return input_shape
 
 
 

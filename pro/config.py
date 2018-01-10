@@ -47,7 +47,8 @@ class Config(object):
         self.fix_adjacent_road_num = conf["fix_adjacent_road_num"]
         self.start_hour = conf["start_hour"]
         self.end_hour = conf["end_hour"]
-
+        self.use_externel = conf["use_externel"]
+        self.use_matrix_fuse = conf["use_matrix_fuse"]
         if "observe_p" in conf:
             self.observe_p = conf["observe_p"]
         else:

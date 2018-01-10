@@ -35,33 +35,35 @@ def get_train_test_data(conf, need_road_network_structure_matrix, no_adjacent_fi
 
     arm_shape = arm.shape
 
+    xe = xs[3]
     xp = xs[1]
     xt = xs[2]
     xs = xs[0]
 
-
     xs = xs.reshape(xs.shape[0], xs.shape[1], xs.shape[2], 1)
 
     arms = np.tile(arm, (xs.shape[0], 1, 1))
-    train_xs, test_xs, train_ys, test_ys, train_arms, test_arms,\
-        train_xp,test_xp,train_xt,test_xt = data.split(conf.test_ratio, [xs, ys, arms, xp,xt])
+    train_xs, test_xs, train_ys, test_ys, train_arms, test_arms, \
+    train_xp, test_xp, train_xt, test_xt, train_xe, test_xe = data.split(conf.test_ratio, [xs, ys, arms, xp, xt, xe])
 
-    train_xs, train_ys, train_arms,train_xp,train_xt = get_multiple_equal_batch_size([train_xs,
-                                                                    train_ys,
-                                                                    train_arms,
-                                                                    train_xp,
-                                                                    train_xt],
-                                                                   conf.batch_size)
+    train_xs, train_ys, train_arms, train_xp, train_xt,train_xe = get_multiple_equal_batch_size([train_xs,
+                                                                                        train_ys,
+                                                                                        train_arms,
+                                                                                        train_xp,
+                                                                                        train_xt,
+                                                                                        train_xe],
+                                                                                       conf.batch_size)
 
-    test_xs, test_ys, test_arms, test_xp, test_xt = get_multiple_equal_batch_size([test_xs,
-                                                                 test_ys,
-                                                                 test_arms,
-                                                                 test_xp,
-                                                                 test_xt],
-                                                                conf.batch_size)
+    test_xs, test_ys, test_arms, test_xp, test_xt,test_xe = get_multiple_equal_batch_size([test_xs,
+                                                                                   test_ys,
+                                                                                   test_arms,
+                                                                                   test_xp,
+                                                                                   test_xt,
+                                                                                   test_xe],
+                                                                                  conf.batch_size)
     if need_road_network_structure_matrix:
-        return data, arm_shape, train_xs, train_ys, train_arms,train_xp,train_xt,\
-                                test_xs, test_ys, test_arms,test_xp,test_xt
+        return data, arm_shape, train_xs, train_ys, train_arms, train_xp, train_xt,train_xe, \
+               test_xs, test_ys, test_arms, test_xp, test_xt,test_xe
     else:
-        return data, arm_shape, train_xs, train_ys, None,train_xp,train_xt,\
-               test_xs, test_ys, None, test_xp,test_xt
+        return data, arm_shape, train_xs, train_ys, None, train_xp, train_xt,train_xe, \
+               test_xs, test_ys, None, test_xp, test_xt,test_xe

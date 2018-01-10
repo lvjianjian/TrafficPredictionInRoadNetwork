@@ -20,6 +20,7 @@ import cPickle
 import time
 import threading
 import Queue
+import h5py
 
 region1 = [(116.274194, 39.832815), (116.501429, 39.998614)]  # 左下角 和 右上角 4,5环之间
 
@@ -752,3 +753,86 @@ def completion_data(path, suffix, cache=True,
             np.save(arm_path, arm)
             print "cache finish"
     return stm, arm, t
+
+
+def timestamp2vec(timestamps):
+    # tm_wday range [0, 6], Monday is 0
+    # vec = [time.strptime(str(t[:8], encoding='utf-8'), '%Y%m%d').tm_wday for t in timestamps]  # python3
+    vec = [time.strptime(t[:8], '%Y%m%d').tm_wday for t in timestamps]  # python2
+    hours = [int(t[8:10]) for t in timestamps]
+    hour_min = np.min(hours)
+    hour_max = np.max(hours)
+    ret = []
+    for i in vec:
+        v = [0 for _ in range(7)]
+        v[i] = 1
+        if i >= 5:
+            v.append(0)  # weekend
+        else:
+            v.append(1)  # weekday
+        ret.append(v)
+        v2 = [0 for _ in range(hour_max - hour_min + 1)]
+        v2[hours[i] - hour_min] = 1
+        v+=v2
+    return np.asarray(ret)
+
+def load_meteorol(timeslots, fname):
+    '''
+    timeslots: the predicted timeslots
+    In real-world, we dont have the meteorol data in the predicted timeslot, instead, we use the meteoral at previous timeslots, i.e., slot = predicted_slot - timeslot (you can use predicted meteorol data as well)
+    '''
+    f = h5py.File(fname, 'r')
+    Timeslot = f['date'].value
+    WindSpeed = f['windspeeds'].value
+    Weather = f['weathers'].value
+    maxTs = f['maxTs'].value
+    minTs = f['minTs'].value
+    f.close()
+
+    M = dict()  # map timeslot to index
+    for i, slot in enumerate(Timeslot):
+        M[slot] = i
+
+    WS = []  # WindSpeed
+    WR = []  # Weather
+    maxTE = []  # maxTs
+    minTE = []
+
+    for slot in timeslots:
+        predicted_id = M[int(slot[:8])]
+        cur_id = predicted_id - 1
+        WS.append(WindSpeed[cur_id])
+        WR.append(Weather[cur_id])
+        maxTE.append(maxTs[cur_id])
+        minTE.append(minTs[cur_id])
+
+    WS = np.asarray(WS)
+    WR = np.asarray(WR)
+    maxTE = np.asarray(maxTE)
+    minTE = np.asarray(minTE)
+    # 0-1 scale
+    if WS.max() - WS.min() != 0:
+        WS = 1. * (WS - WS.min()) / (WS.max() - WS.min())
+    else:
+        WS[:] = 0
+    maxTE = 1. * (maxTE - maxTE.min()) / (maxTE.max() - maxTE.min())
+    minTE = 1. * (minTE - minTE.min()) / (minTE.max() - minTE.min())
+    print("shape: ", WS.shape, WR.shape, maxTE.shape, minTE.shape)
+
+    # concatenate all these attributes
+    merge_data = np.hstack([WR, WS[:, None], maxTE[:, None], minTE[:, None]])
+
+    # print('meger shape:', merge_data.shape)
+    return merge_data
+
+
+def load_holiday(timeslots, fname):
+    f = open(fname, 'r')
+    holidays = f.readlines()
+    holidays = set([h.strip() for h in holidays])
+    H = np.zeros(len(timeslots))
+    for i, slot in enumerate(timeslots):
+        if slot[:8] in holidays:
+            H[i] = 1
+    # print(timeslots[H==1])
+    return H[:, None]
