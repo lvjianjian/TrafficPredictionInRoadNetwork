@@ -17,7 +17,7 @@ from keras.layers.convolutional import Conv2D, MaxPooling2D, Conv3D, MaxPooling3
 from keras.layers.merge import Add, Concatenate
 from keras.layers.local import LocallyConnected2D
 from keras.models import Model
-from pro.dl import rmse, mape, mae, MyReshape, MyInverseReshape, get_model_save_path,matrixLayer
+from pro.dl import rmse, mape, mae, MyReshape, MyInverseReshape, get_model_save_path, matrixLayer
 from pro.dl.LookupConv import Lookup, LookUpSqueeze
 
 
@@ -173,16 +173,16 @@ class Factory(object):
             output = Dense(1, activation="relu")(output)
             output = MyInverseReshape(conf.batch_size)(output)
             input_e, output_e = self.__E_input_output(conf, arm_shape)
-            if isinstance(input_e,list):
+            if isinstance(input_e, list):
                 inputs += input_e
             else:
                 inputs += [input_e]
             if conf.use_matrix_fuse:
                 outputs = [matrixLayer()(output)]
                 outputs.append(matrixLayer()(output_e))
-                output = Add()[outputs]
+                output = Add()(outputs)
             else:
-                output = Add()([output,output_e])
+                output = Add()([output, output_e])
             output = Activation("tanh")(output)
         else:
             output = Dense(1, activation="tanh")(output)
@@ -191,8 +191,7 @@ class Factory(object):
         model = Model(inputs=inputs, outputs=output)
         return model
 
-
-    def __E_input_output(self, conf, arm_shape, activation = "tanh"):
+    def __E_input_output(self, conf, arm_shape, activation="tanh"):
         road_num = arm_shape[0]
         if conf.observe_p != 0:
             input_x1 = Input((road_num, conf.observe_p))
@@ -218,12 +217,11 @@ class Factory(object):
         output = Dense(1, activation=activation)(output)
         output = MyInverseReshape(conf.batch_size)(output)
 
-        input_x3 = Input((conf.predict_length, 37))
+        input_x3 = Input((conf.predict_length, 37))  # 37 is externel dim
         if isinstance(input_x, list):
             input_x += [input_x3]
         else:
             input_x = [input_x, input_x3]
-
 
         output_3 = MyReshape(conf.batch_size)(input_x3)
         output_3 = Dense(road_num, activation=activation)(output_3)
@@ -264,16 +262,16 @@ class Factory(object):
             output = Dense(1, activation="relu")(output)
             output = MyInverseReshape(conf.batch_size)(output)
             input_e, output_e = self.__E_input_output(conf, arm_shape)
-            if isinstance(input_e,list):
+            if isinstance(input_e, list):
                 inputs += input_e
             else:
                 inputs += [input_e]
             if conf.use_matrix_fuse:
                 outputs = [matrixLayer()(output)]
                 outputs.append(matrixLayer()(output_e))
-                output = Add()[outputs]
+                output = Add()(outputs)
             else:
-                output = Add()([output,output_e])
+                output = Add()([output, output_e])
             output = Activation("tanh")(output)
         else:
             output = Dense(1, activation="tanh")(output)
@@ -301,26 +299,24 @@ class Factory(object):
         output = LookUpSqueeze()(output)
         inputs = [input_x, input_ram]
 
-
         if conf.use_externel:
             output = Conv2D(1, (1, 5), activation="relu")(output)
             output = Reshape((road_num, conf.predict_length))(output)
             input_e, output_e = self.__E_input_output(conf, arm_shape)
-            if isinstance(input_e,list):
+            if isinstance(input_e, list):
                 inputs += input_e
             else:
                 inputs += [input_e]
             if conf.use_matrix_fuse:
                 outputs = [matrixLayer()(output)]
                 outputs.append(matrixLayer()(output_e))
-                output = Add()[outputs]
+                output = Add()(outputs)
             else:
-                output = Add()([output,output_e])
+                output = Add()([output, output_e])
             output = Activation("tanh")(output)
         else:
             output = Conv2D(1, (1, 5), activation="tanh")(output)
             output = Reshape((road_num, conf.predict_length))(output)
-
 
         model = Model(inputs=inputs, outputs=output)
         return model

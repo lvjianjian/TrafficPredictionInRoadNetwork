@@ -32,17 +32,39 @@ def main():
     conf = Config(args.config)
 
     # 数据读取
-    data, arm_shape, train_xs, train_ys, train_arms, test_xs, test_ys, test_arms = \
+    data, arm_shape, train_xs, train_ys, train_arms, train_xp, train_xt, train_xe, \
+    test_xs, test_ys, test_arms, test_xp, test_xt, test_xe = \
         get_train_test_data(conf,
                             need_road_network_structure_matrix=conf.use_loopup,
                             no_adjacent_fill_zero=conf.no_adjacent_fill_zero)
 
-    print train_xs.shape
-    print test_xs.shape
-
     if conf.use_loopup:
         train_xs = [train_xs, train_arms]
         test_xs = [test_xs, test_arms]
+
+    if conf.use_externel:
+        if conf.observe_p != 0:
+            if isinstance(train_xs, list):
+                train_xs += [train_xp]
+                test_xs += [test_xp]
+            else:
+                train_xs = [train_xs, train_xp]
+                test_xs = [test_xs, test_xp]
+
+        if conf.observe_t != 0:
+            if isinstance(train_xs, list):
+                train_xs += [train_xt]
+                test_xs += [test_xt]
+            else:
+                train_xs = [train_xs, train_xt]
+                test_xs = [test_xs, test_xt]
+
+        if conf.observe_p != 0 or conf.observe_t != 0:
+            train_xs += [train_xe]
+            test_xs += [test_xe]
+
+    # train_xs = [train_xp, train_xt, train_xe]
+    # test_xs = [test_xp, test_xt, test_xe]
 
     # model weights save path
     model_save_path = get_model_save_path(conf)

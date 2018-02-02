@@ -72,13 +72,15 @@ class BJ_DATA(object):
                  stride_sparse=False, stride_edges=1,
                  fix_adjacent_road_num=-1):
 
-        basic_path = os.path.join(path, "cache", "{}_" + "{}_{}_{}_{}_{}_{}_{}".format(suffix,
+        basic_path = os.path.join(path, "cache", "{}_" + "{}_{}_{}_{}_{}_{}_{}_{}_{}".format(suffix,
                                                                                        start_hour,
                                                                                        end_hour,
                                                                                        time_fill_split,
                                                                                        road_fill_split,
                                                                                        self.conf.observe_length,
-                                                                                       self.conf.observe_p))
+                                                                                       self.conf.observe_p,
+                                                                                       self.conf.observe_t,
+                                                                                       self.predict_length))
         xc_path = basic_path.format("XC")
         xp_path = basic_path.format("XP")
         xt_path = basic_path.format("XT")
@@ -235,7 +237,15 @@ class BJ_DATA(object):
             arm = np.load(arm_path + ".npy")
             E = np.load(E_path+".npy")
             self.min_max_scala = cPickle.load(open(min_max_path))
-        # print XC.shape
+            # else:
+            #     XP = None
+            #     XT = None
+            #     YS = None
+            #     arm = None
+            #     E = None
+            #     self.min_max_scala = None
+
+                # print XC.shape
         # print XP.shape
         # print XT.shape
         # print YS.shape
