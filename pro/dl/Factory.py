@@ -117,7 +117,7 @@ class Factory(object):
         output = Activation(activation="relu")(output)
         output = MyReshape(conf.batch_size)(output)
         output = SimpleRNN(5)(output)
-        output = Dense(1)(output)
+        output = Dense(conf.predict_length)(output)
         output = MyInverseReshape(conf.batch_size)(output)
         # f = Flatten()(pool3)
         # output = Dense(road_num * conf.predict_length, activation="sigmoid")(f)
@@ -170,7 +170,7 @@ class Factory(object):
         inputs = [input_x, input_ram]
 
         if conf.use_externel:
-            output = Dense(1, activation="relu")(output)
+            output = Dense(conf.predict_length, activation="relu")(output)
             output = MyInverseReshape(conf.batch_size)(output)
             input_e, output_e = self.__E_input_output(conf, arm_shape)
             if isinstance(input_e, list):
@@ -185,7 +185,7 @@ class Factory(object):
                 output = Add()([output, output_e])
             output = Activation("tanh")(output)
         else:
-            output = Dense(1, activation="tanh")(output)
+            output = Dense(conf.predict_length, activation="tanh")(output)
             output = MyInverseReshape(conf.batch_size)(output)
 
         model = Model(inputs=inputs, outputs=output)
@@ -214,7 +214,7 @@ class Factory(object):
             output = output2
             input_x = input_x2
 
-        output = Dense(1, activation=activation)(output)
+        output = Dense(conf.predict_length, activation=activation)(output)
         output = MyInverseReshape(conf.batch_size)(output)
 
         input_x3 = Input((conf.predict_length, 37))  # 37 is externel dim
@@ -259,7 +259,7 @@ class Factory(object):
         output = SimpleRNN(5)(output)
         inputs = [input_x, input_ram]
         if conf.use_externel:
-            output = Dense(1, activation="relu")(output)
+            output = Dense(conf.predict_length, activation="relu")(output)
             output = MyInverseReshape(conf.batch_size)(output)
             input_e, output_e = self.__E_input_output(conf, arm_shape)
             if isinstance(input_e, list):
@@ -274,7 +274,7 @@ class Factory(object):
                 output = Add()([output, output_e])
             output = Activation("tanh")(output)
         else:
-            output = Dense(1, activation="tanh")(output)
+            output = Dense(conf.predict_length, activation="tanh")(output)
             output = MyInverseReshape(conf.batch_size)(output)
         model = Model(inputs=inputs, outputs=output)
         return model
