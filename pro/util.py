@@ -836,3 +836,7 @@ def load_holiday(timeslots, fname):
             H[i] = 1
     # print(timeslots[H==1])
     return H[:, None]
+
+
+if __name__ == '__main__':
+    completion_data()
